@@ -98,7 +98,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
       HAL_GPIO_WritePin(GPIOG, GPIO_PIN_14, 1);
-	  HAL_GPIO_WritePin(GPIOG, GPIO_PIN_13, 1);
+      HAL_GPIO_WritePin(GPIOG, GPIO_PIN_13, 1);
   }
   /* USER CODE END 3 */
 }
