@@ -38,52 +38,54 @@ BUILD_ARTIFACT_NAME := blink_led
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
-CC = gcc
+CC = arm-none-eabi-gcc
+BIN = $(BUILD_ARTIFACT_NAME).bin
+
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-blink_led.elf \
+$(BUILD_ARTIFACT) \
 
 MAP_FILES += \
-blink_led.map \
+$(BUILD_ARTIFACT:.elf=.map) \
 
 SIZE_OUTPUT += \
-default.size.stdout \
+$(BUILD_ARTIFACT:.elf=.size.stdout) \
 
 OBJDUMP_LIST += \
-blink_led.list \
+$(BUILD_ARTIFACT:.elf=.list) \
 
 
 # All Target
 all: main-build $(BIN)
 
 # Main-build Target
-main-build: blink_led.elf secondary-outputs
+main-build: $(BUILD_ARTIFACT) secondary-outputs
 
 # Tool invocations
-blink_led.elf blink_led.map: $(OBJS) $(USER_OBJS) /home/ayoub/Desktop/projectstm32/blink_led/STM32F429ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "blink_led.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/ayoub/Desktop/projectstm32/blink_led/STM32F429ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="blink_led.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+$(BUILD_ARTIFACT): $(OBJS) $(USER_OBJS) /home/ayoub/Desktop/projectstm32/blink_led/STM32F429ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	$(CC) -o "$(BUILD_ARTIFACT)" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/ayoub/Desktop/projectstm32/blink_led/STM32F429ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="$(BUILD_ARTIFACT:.elf=.map)" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-size  $(EXECUTABLES)
+$(BUILD_ARTIFACT:.elf=.size.stdout): $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-size $(EXECUTABLES)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-blink_led.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "blink_led.list"
+$(BUILD_ARTIFACT:.elf=.list): $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "$(BUILD_ARTIFACT:.elf=.list)"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Rule to create the binary file
-$(BIN): $(EXECUTABLES)
-	arm-none-eabi-objcopy -O binary $(EXECUTABLES) $(BIN)
+$(BIN): $(BUILD_ARTIFACT)
+	arm-none-eabi-objcopy -O binary $(BUILD_ARTIFACT) $(BIN)
 	@echo 'Finished building binary: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) blink_led.elf blink_led.list blink_led.map default.size.stdout $(BIN)
+	-$(RM) $(BUILD_ARTIFACT) $(BIN) $(MAP_FILES) $(SIZE_OUTPUT) $(OBJDUMP_LIST)
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
