@@ -38,7 +38,7 @@ BUILD_ARTIFACT_NAME := blink_led
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
-
+CC = gcc
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
 blink_led.elf \
@@ -54,7 +54,7 @@ blink_led.list \
 
 
 # All Target
-all: main-build
+all: main-build $(BIN)
 
 # Main-build Target
 main-build: blink_led.elf secondary-outputs
@@ -75,9 +75,15 @@ blink_led.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
+# Rule to create the binary file
+$(BIN): $(EXECUTABLES)
+	arm-none-eabi-objcopy -O binary $(EXECUTABLES) $(BIN)
+	@echo 'Finished building binary: $@'
+	@echo ' '
+
 # Other Targets
 clean:
-	-$(RM) blink_led.elf blink_led.list blink_led.map default.size.stdout
+	-$(RM) blink_led.elf blink_led.list blink_led.map default.size.stdout $(BIN)
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
@@ -92,3 +98,4 @@ warn-no-linker-script-specified:
 .PHONY: all clean dependents main-build fail-specified-linker-script-missing warn-no-linker-script-specified
 
 -include ../makefile.targets
+
