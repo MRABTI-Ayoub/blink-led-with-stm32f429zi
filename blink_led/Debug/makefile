@@ -52,6 +52,9 @@ default.size.stdout \
 OBJDUMP_LIST += \
 blink_led.list \
 
+BIN_FILES += \
+blink_led.bin \
+
 
 # All Target
 all: main-build
@@ -63,6 +66,11 @@ main-build: blink_led.elf secondary-outputs
 blink_led.elf blink_led.map: $(OBJS) $(USER_OBJS) /var/lib/jenkins/workspace/SW.blink/blink_led/STM32F429ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	arm-none-eabi-gcc -o "blink_led.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/var/lib/jenkins/workspace/SW.blink/blink_led/STM32F429ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="blink_led.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
+	@echo ' '
+
+blink_led.bin: blink_led.elf
+	arm-none-eabi-objcopy -O binary "blink_led.elf" "blink_led.bin"
+	@echo 'Finished building: $@'
 	@echo ' '
 
 default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
@@ -77,10 +85,10 @@ blink_led.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 
 # Other Targets
 clean:
-	-$(RM) blink_led.elf blink_led.list blink_led.map default.size.stdout
+	-$(RM) blink_led.elf blink_led.list blink_led.map default.size.stdout blink_led.bin
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(BIN_FILES)
 
 fail-specified-linker-script-missing:
 	@echo 'Error: Cannot find the specified linker script. Check the linker settings in the build configuration.'
@@ -91,4 +99,5 @@ warn-no-linker-script-specified:
 
 .PHONY: all clean dependents main-build fail-specified-linker-script-missing warn-no-linker-script-specified
 
--include ../makefile.targets
+-include ../makefile.targets 
+
