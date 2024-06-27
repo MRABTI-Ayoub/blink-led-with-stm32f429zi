@@ -38,7 +38,6 @@ BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
-# Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
 $(BUILD_ARTIFACT)
 
@@ -46,28 +45,25 @@ MAP_FILES += \
 $(BUILD_ARTIFACT:.elf=.map)
 
 SIZE_OUTPUT += \
-$(BUILD_ARTIFACT:.elf=.size.stdout)
+default.size.stdout
 
 OBJDUMP_LIST += \
 $(BUILD_ARTIFACT:.elf=.list)
-
-BIN_FILES += \
-$(BUILD_ARTIFACT:.elf=.bin)
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: $(BUILD_ARTIFACT) secondary-outputs $(BIN_FILES)
+main-build: $(BUILD_ARTIFACT) $(BUILD_ARTIFACT:.elf=.bin) secondary-outputs
 
 # Tool invocations
-$(BUILD_ARTIFACT): $(OBJS) $(USER_OBJS) /home/ayoub/Desktop/projectstm32/blink_led/STM32F429ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+$(BUILD_ARTIFACT) $(BUILD_ARTIFACT:.elf=.map): $(OBJS) $(USER_OBJS) /home/ayoub/Desktop/projectstm32/blink_led/STM32F429ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	arm-none-eabi-gcc -o "$(BUILD_ARTIFACT)" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/ayoub/Desktop/projectstm32/blink_led/STM32F429ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="$(BUILD_ARTIFACT:.elf=.map)" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-$(BUILD_ARTIFACT:.elf=.size.stdout): $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-size  $(EXECUTABLES)
+default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-size $(EXECUTABLES)
 	@echo 'Finished building: $@'
 	@echo ' '
 
@@ -76,13 +72,14 @@ $(BUILD_ARTIFACT:.elf=.list): $(EXECUTABLES) makefile objects.list $(OPTIONAL_TO
 	@echo 'Finished building: $@'
 	@echo ' '
 
-$(BUILD_ARTIFACT:.elf=.bin): $(BUILD_ARTIFACT:.elf)
-	@echo 'Generating $@'
+# Règle pour générer un fichier .bin à partir de l'ELF
+$(BUILD_ARTIFACT:.elf=.bin): $(BUILD_ARTIFACT)
 	arm-none-eabi-objcopy -O binary $< $@
+	@echo 'Generated $@'
 
 # Other Targets
 clean:
-	-$(RM) $(BUILD_ARTIFACT) $(BUILD_ARTIFACT:.elf=.list) $(BUILD_ARTIFACT:.elf=.map) $(BUILD_ARTIFACT:.elf=.size.stdout) $(BUILD_ARTIFACT:.elf=.bin)
+	-$(RM) $(BUILD_ARTIFACT) $(BUILD_ARTIFACT:.elf=.list) $(BUILD_ARTIFACT:.elf=.map) $(BUILD_ARTIFACT:.elf=.bin) default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
